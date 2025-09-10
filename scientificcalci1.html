@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Engineering Calculator — E&I Toolkit</title>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <style>
+    :root{--bg:#0f1724;--card:#ffffff;--muted:#6b7280;--accent:#6d28d9}
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,system-ui,Arial;background:linear-gradient(135deg,#0f1724 0%,#07203a 100%);color:#0b1220;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+    .container{width:100%;max-width:1100px;background:#fff;border-radius:14px;padding:18px;box-shadow:0 12px 40px rgba(2,6,23,0.45)}
+    header{display:flex;align-items:center;gap:16px}
+    header h1{font-size:20px;margin:0}
+    nav{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+    .tab{padding:8px 12px;border-radius:8px;background:#f3f4f6;color:#111;cursor:pointer;font-weight:600}
+    .tab.active{background:var(--accent);color:#fff}
+    .main{display:grid;grid-template-columns:1fr 420px;gap:18px;margin-top:16px}
+    .card{background:#f9fafb;border-radius:10px;padding:14px;box-shadow:0 6px 18px rgba(13,20,31,0.06)}
+    .display{background:linear-gradient(90deg,#667eea,#764ba2);color:#fff;padding:18px;border-radius:8px;font-size:28px;text-align:right;min-height:64px;display:flex;align-items:center;justify-content:flex-end}
+    .buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+    button{padding:12px;border-radius:8px;border:0;background:#e6e7ee;font-weight:700;cursor:pointer}
+    button.op{background:linear-gradient(90deg,#667eea,#764ba2);color:#fff}
+    .small{font-size:13px;padding:8px}
+    .tools{display:flex;flex-direction:column;gap:12px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type=number], select{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e7ee}
+    .plot-area{height:260px}
+    footer{margin-top:14px;font-size:13px;color:var(--muted)}
+    @media (max-width:900px){.main{grid-template-columns:1fr;}.plot-area{height:220px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div style="width:48px;height:48px;border-radius:10px;background:linear-gradient(90deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800">E&I</div>
+      <div>
+        <h1>Engineering Calculator — E&amp;I Toolkit</h1>
+        <div style="color:var(--muted);font-size:13px">Scientific + Electronics calculators + plots (single-file web app)</div>
+      </div>
+    </header>
+
+    <nav id="nav">
+      <div class="tab active" data-tab="calc">Calculator</div>
+      <div class="tab" data-tab="electronics">Electronics Tools</div>
+      <div class="tab" data-tab="about">About / Export</div>
+    </nav>
+
+    <div class="main">
+      <!-- Left: tools and calculators -->
+      <div>
+        <!-- Calculator card -->
+        <section id="calc" class="card" style="display:block">
+          <div class="display" id="display">0</div>
+          <div class="buttons" id="buttons">
+            <button class="small" onclick="clearDisplay()">C</button>
+            <button class="small op" onclick="appendToDisplay('/')">÷</button>
+            <button class="small op" onclick="appendToDisplay('*')">×</button>
+            <button class="small" onclick="deleteLast()">⌫</button>
+
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            <button class="op" onclick="appendToDisplay('-')">−</button>
+
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            <button class="op" onclick="appendToDisplay('+')">+</button>
+
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            <button onclick="appendToDisplay('.')">.</button>
+
+            <button class="small" onclick="appendFn('Math.sin(')">sin</button>
+            <button class="small" onclick="appendFn('Math.cos(')">cos</button>
+            <button class="small" onclick="appendFn('Math.tan(')">tan</button>
+            <button class="small op" onclick="appendFn('Math.log(')">ln</button>
+
+            <button class="small" onclick="appendToDisplay('0')" style="grid-column:span 2">0</button>
+            <button class="small op" onclick="appendFn('Math.PI')">π</button>
+            <button class="small op" onclick="calculate()">=</button>
+          </div>
+        </section>
+
+        <!-- Electronics Tools -->
+        <section id="electronics" class="card" style="display:none;margin-top:14px">
+          <h3 style="margin:0 0 8px 0">Ohm's Law</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end">
+            <div>
+              <label>Voltage (V)</label>
+              <input type="number" id="v_val" placeholder="leave blank if unknown">
+            </div>
+            <div>
+              <label>Current (I) - Ampere</label>
+              <input type="number" id="i_val" placeholder="leave blank if unknown">
+            </div>
+            <div>
+              <label>Resistance (Ω)</label>
+              <input type="number" id="r_val" placeholder="leave blank if unknown">
+            </div>
+            <div>
+              <button class="small" onclick="ohmCalculate()">Calculate</button>
+            </div>
+          </div>
+          <div id="ohm_result" style="margin-top:8px;color:var(--muted)"></div>
+
+          <hr style="margin:12px 0">
+
+          <h3 style="margin:0 0 8px 0">RC Time Constant (τ) & Plots</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label>Resistance R (Ω)</label>
+              <input type="number" id="rc_r" value="1000">
+            </div>
+            <div>
+              <label>Capacitance C (F)</label>
+              <input type="number" id="rc_c" value="0.0001" step="any">
+            </div>
+            <div>
+              <label>Voltage Source V<sub>in</sub> (V)</label>
+              <input type="number" id="rc_v" value="5">
+            </div>
+            <div>
+              <button class="small" onclick="rcCalculate()">Compute & Plot</button>
+            </div>
+          </div>
+          <div id="rc_result" style="margin-top:8px;color:var(--muted)"></div>
+
+          <div style="margin-top:12px">
+            <canvas id="rcChart" class="plot-area"></canvas>
+          </div>
+
+        </section>
+
+        <!-- About / Export -->
+        <section id="about" class="card" style="display:none;margin-top:14px">
+          <h3>About</h3>
+          <p style="color:var(--muted);margin-top:6px">This single-file web app combines a scientific calculator with electronics utilities useful for students — Ohm's Law, RC time constant + plots. You can export charts as PNG using the chart's right-click or add server-side export later.</p>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="small" onclick="downloadHTML()">Download HTML</button>
+            <button class="small" onclick="showPublishSteps()">How to publish (GitHub Pages)</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right: quick tools / plots -->
+      <aside>
+        <div class="card tools">
+          <h4 style="margin:0 0 6px 0">Quick Tools</h4>
+          <div style="font-size:13px;color:var(--muted)">Unit conversions & utilities</div>
+
+          <div style="margin-top:8px">
+            <label>Ohms ↔ KΩ</label>
+            <input type="number" id="ohm_input" placeholder="value">
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="small" onclick="convertOhm(true)">to kΩ</button>
+              <button class="small" onclick="convertOhm(false)">to Ω</button>
+            </div>
+            <div id="ohm_conv" style="color:var(--muted);margin-top:6px"></div>
+          </div>
+
+          <hr>
+
+          <div>
+            <label>Frequency unit</label>
+            <input type="number" id="freq_in" placeholder="Hz">
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="small" onclick="convertFreq('k')">to kHz</button>
+              <button class="small" onclick="convertFreq('M')">to MHz</button>
+            </div>
+            <div id="freq_conv" style="color:var(--muted);margin-top:6px"></div>
+          </div>
+
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h4 style="margin:0 0 6px 0">Export / Share</h4>
+          <div style="color:var(--muted);font-size:13px">Use the Download button to save this HTML file. To publish globally, push to a GitHub repo and enable GitHub Pages (see steps).</div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>Built for learning — Electronics &amp; Instrumentation students. Need extra features? Ask me to add RLC, Bode plots, or ADC calibration tools.</footer>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // --- Simple calculator logic ---
+    const displayEl = document.getElementById('display');
+    let currentInput = '0';
+    let shouldReset = false;
+
+    function updateDisplay(){ displayEl.textContent = currentInput; }
+    function clearDisplay(){ currentInput='0'; shouldReset=false; updateDisplay(); }
+    function appendToDisplay(v){ if(shouldReset){ currentInput='0'; shouldReset=false; } if(currentInput==='0' && v!=='.'){ currentInput = v; } else { currentInput += v; } updateDisplay(); }
+    function appendFn(s){ if(shouldReset){ currentInput='0'; shouldReset=false; } currentInput += s; updateDisplay(); }
+    function deleteLast(){ if(currentInput.length>1){ currentInput=currentInput.slice(0,-1);} else currentInput='0'; updateDisplay(); }
+    function calculate(){ try{ // safe replace common symbols
+        let expr = currentInput.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+        const result = Function('return ('+expr+')')();
+        if(!isFinite(result)){ currentInput='Error'; } else { currentInput = Math.round(result*1e9)/1e9 + ''; }
+        shouldReset=true; } catch(e){ currentInput='Error'; shouldReset=true; } updateDisplay(); }
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key>='0' && e.key<='9') appendToDisplay(e.key);
+      else if(e.key==='.') appendToDisplay('.');
+      else if(['+','-','*','/'].includes(e.key)) appendToDisplay(e.key);
+      else if(e.key==='Enter') calculate();
+      else if(e.key==='Backspace') deleteLast();
+      else if(e.key==='Escape') clearDisplay();
+    });
+
+    // --- Tabs ---
+    document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      const which = t.dataset.tab;
+      document.querySelectorAll('section[id]').forEach(s=> s.style.display = (s.id===which)?'block':'none');
+    }));
+
+    // --- Ohm's law ---
+    function ohmCalculate(){
+      const v = parseFloat(document.getElementById('v_val').value);
+      const i = parseFloat(document.getElementById('i_val').value);
+      const r = parseFloat(document.getElementById('r_val').value);
+      let out = '';
+      if(isNaN(v) + isNaN(i) + isNaN(r) !== 1){ out = 'Please leave exactly one field blank (unknown).'; document.getElementById('ohm_result').textContent = out; return; }
+      if(isNaN(v)){
+        const val = i * r; out = `Voltage V = ${val} V`;
+      } else if(isNaN(i)){
+        const val = v / r; out = `Current I = ${val} A`;
+      } else if(isNaN(r)){
+        const val = v / i; out = `Resistance R = ${val} Ω`;
+      }
+      document.getElementById('ohm_result').textContent = out;
+    }
+
+    // --- RC calculation + plotting ---
+    let rcChart = null;
+    function rcCalculate(){
+      const R = parseFloat(document.getElementById('rc_r').value);
+      const C = parseFloat(document.getElementById('rc_c').value);
+      const V = parseFloat(document.getElementById('rc_v').value);
+      if(!isFinite(R) || !isFinite(C) || !isFinite(V) || R<=0 || C<=0){ document.getElementById('rc_result').textContent = 'Enter valid positive numbers for R and C.'; return; }
+      const tau = R*C; document.getElementById('rc_result').textContent = `τ = R·C = ${tau} seconds`;
+
+      // generate charging and discharging data
+      const points = 200; const tmax = Math.max(5*tau, 0.01);
+      const labels = []; const charge = []; const discharge = [];
+      for(let i=0;i<points;i++){ const t = (i/ (points-1)) * tmax; labels.push((t).toFixed(3)); charge.push( V*(1-Math.exp(-t/tau)) ); discharge.push( V*Math.exp(-t/tau) ); }
+
+      const ctx = document.getElementById('rcChart').getContext('2d');
+      if(rcChart) rcChart.destroy();
+      rcChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: labels, datasets: [
+          { label: 'Charging (Vc)', data: charge, fill:false, tension:0.2 },
+          { label: 'Discharging (Vc)', data: discharge, fill:false, tension:0.2 }
+        ] },
+        options: { responsive:true, plugins:{legend:{position:'top'}}, scales:{x:{title:{display:true,text:'Time (s)'}}, y:{title:{display:true,text:'Voltage (V)'}} } }
+      });
+    }
+
+    // --- Small utilities ---
+    function convertOhm(toK){ const v = parseFloat(document.getElementById('ohm_input').value); if(!isFinite(v)){ document.getElementById('ohm_conv').textContent='Enter a number'; return;} document.getElementById('ohm_conv').textContent = toK? (v/1000)+' kΩ' : (v*1000)+' Ω'; }
+    function convertFreq(scale){ const v = parseFloat(document.getElementById('freq_in').value); if(!isFinite(v)){ document.getElementById('freq_conv').textContent='Enter Hz value'; return;} if(scale==='k') document.getElementById('freq_conv').textContent = (v/1000)+' kHz'; else document.getElementById('freq_conv').textContent = (v/1e6)+' MHz'; }
+
+    // --- Download HTML ---
+    function downloadHTML(){ const html = '<!doctype html>\n' + document.documentElement.outerHTML; const blob = new Blob([html],{type:'text/html'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'engineering_calculator.html'; a.click(); URL.revokeObjectURL(url); }
+
+    function showPublishSteps(){ alert('To publish: 1) Create a GitHub repo. 2) Add this index.html as the root file (rename if needed). 3) In Repo Settings → Pages → choose main branch /root. 4) After a few minutes your site will be live at https://your-username.github.io/repo-name/'); }
+
+    // --- Helper: simple safety ---
+    // Prevent accidental long-running JS in calculator by limiting length
+    (function(){ const maxLen=200; setInterval(()=>{ if(currentInput.length>maxLen){ currentInput = currentInput.slice(0, maxLen); updateDisplay(); } },1000); })();
+  </script>
+</body>
+</html>
